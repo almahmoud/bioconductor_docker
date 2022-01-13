@@ -26,7 +26,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     BIOCONDUCTOR_DOCKER_VERSION=$BIOCONDUCTOR_DOCKER_VERSION \
     BIOCONDUCTOR_VERSION=$BIOCONDUCTOR_VERSION
 
-RUN /tmp/scripts/bioconductor_install.sh
+RUN sh /tmp/scripts/bioconductor_install.sh
 
 # Init command for s6-overlay
 CMD ["/init"]

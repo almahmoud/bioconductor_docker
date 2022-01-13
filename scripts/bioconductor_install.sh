@@ -6,9 +6,9 @@ dpkg --clear-avail
 
 
 apt-get update \
-	&& apt-get install -y --no-install-recommends apt-utils \
-	&& apt-get install -y --no-install-recommends \
+	&& apt-get install -y --no-install-recommends apt-utils
 	## Basic deps
+apt-get install -y --no-install-recommends \
 	gdb \
 	libxml2-dev \
 	python3-pip \
@@ -16,14 +16,16 @@ apt-get update \
 	liblzma-dev \
 	libbz2-dev \
 	libpng-dev \
-	libgit2-dev \
+	libgit2-dev
 	## sys deps from bioc_full
+apt-get install -y --no-install-recommends \
 	pkg-config \
 	fortran77-compiler \
 	byacc \
 	automake \
-	curl \
+	curl
 	## This section installs libraries
+apt-get install -y --no-install-recommends \
 	libpcre2-dev \
 	libnetcdf-dev \
 	libhdf5-serial-dev \
@@ -60,8 +62,9 @@ apt-get update \
 	libpoppler-cpp-dev \
 	libprotobuf-dev \
 	libpq-dev \
-	libperl-dev \
+	libperl-dev
 	## software - perl extentions and modules
+apt-get install -y --no-install-recommends \
 	libarchive-extract-perl \
 	libfile-copy-recursive-perl \
 	libcgi-pm-perl \
@@ -70,11 +73,13 @@ apt-get update \
 	libxml-simple-perl \
 	libmysqlclient-dev \
 	default-libmysqlclient-dev \
-	libgdal-dev \
+	libgdal-dev 
 	## new libs
-        libglpk-dev \
-        libeigen3-dev \
+apt-get install -y --no-install-recommends \
+    libglpk-dev \
+    libeigen3-dev 
 	## Databases and other software
+apt-get install -y --no-install-recommends \
 	sqlite \
 	openmpi-bin \
 	mpi-default-bin \
@@ -88,15 +93,16 @@ apt-get update \
 	ggobi \
 	graphviz \
 	protobuf-compiler \
-	jags \
+	jags
 	## Additional resources
+apt-get install -y --no-install-recommends \
 	xfonts-100dpi \
 	xfonts-75dpi \
 	biber \
         libsbml5-dev \
-        libzmq3-dev \
+        libzmq3-dev
         ## python3 dev
-        python3-dev \
+apt-get install -y --no-install-recommends python3-dev \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
