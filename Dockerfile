@@ -1,14 +1,12 @@
 # The suggested name for this image is: bioconductor/bioconductor_docker:devel
 FROM rocker/rstudio:devel
 
-## Set Dockerfile version number
-ARG BIOCONDUCTOR_VERSION=3.15
-
 ##### IMPORTANT ########
 ## The PATCH version number should be incremented each time
 ## there is a change in the Dockerfile.
-ARG BIOCONDUCTOR_PATCH=11
-ARG BIOCONDUCTOR_DOCKER_VERSION=${BIOCONDUCTOR_VERSION}.${BIOCONDUCTOR_PATCH}
+ARG BIOCONDUCTOR_VERSION=3.15 \
+    BIOCONDUCTOR_PATCH=11 \
+    BIOCONDUCTOR_DOCKER_VERSION=${BIOCONDUCTOR_VERSION}.${BIOCONDUCTOR_PATCH}
 
 LABEL name="bioconductor/bioconductor_docker" \
       version=$BIOCONDUCTOR_DOCKER_VERSION \
@@ -26,7 +24,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     BIOCONDUCTOR_DOCKER_VERSION=$BIOCONDUCTOR_DOCKER_VERSION \
     BIOCONDUCTOR_VERSION=$BIOCONDUCTOR_VERSION
 
-RUN /tmp/scripts/bioconductor_install.sh
+RUN sh /tmp/scripts/bioconductor_install.sh
 
 # Init command for s6-overlay
 CMD ["/init"]
