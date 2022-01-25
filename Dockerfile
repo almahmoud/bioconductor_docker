@@ -32,7 +32,7 @@ ADD scripts /bioconductor/scripts
 RUN /rocker_scripts/install_rstudio.sh
 RUN /rocker_scripts/install_pandoc.sh
 
-RUN /bioconductor/scripts/bioconductor_install.sh
+RUN sh /bioconductor/scripts/bioconductor_install.sh
 
 EXPOSE 8787
 
