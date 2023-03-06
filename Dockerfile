@@ -1,7 +1,7 @@
 # The suggested name for this image is: bioconductor/bioconductor_docker:devel
 # See https://github.com/rocker-org/rocker-versioned2/blob/master/dockerfiles/r-ver_4.2.2.Dockerfile#L1
 ARG BASE_OS_IMAGE=ubuntu:jammy
-ARG BASE_IMAGE=rocker/rstudio
+ARG BASE_IMAGE=rocker/ml-verse
 ARG arm64_tag=latest
 ARG amd64_tag=4.2.2
 FROM ${BASE_IMAGE}:${arm64_tag} AS base-arm64
