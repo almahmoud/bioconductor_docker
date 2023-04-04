@@ -16,9 +16,9 @@ then
   if [ $((BIOC_MINOR%2)) -eq 0 ];
   then
       echo "Using latest release R since Bioc devel version is even";
-      sed -i 's#R_VERSION=$RVER#R_VERSION=latest#g' rocker-versioned2/dockerfiles/r-ver_$RVER.Dockerfile
+      sed -i "s#R_VERSION=$RVER#R_VERSION=latest#g" rocker-versioned2/dockerfiles/r-ver_$RVER.Dockerfile
   else
       echo "Using latest pre-release R since Bioc devel version is even";
-      sed -i 's#R_VERSION=$RVER#R_VERSION=patched#g' rocker-versioned2/dockerfiles/r-ver_$RVER.Dockerfile
+      sed -i "s#R_VERSION=$RVER#R_VERSION=patched#g" rocker-versioned2/dockerfiles/r-ver_$RVER.Dockerfile
   fi
 fi
