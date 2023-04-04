@@ -47,7 +47,7 @@ jobs:
 
     - name: Set comma-separated list with all repository names
       id: images
-      run: bash .github/scripts/rocker_prep.sh
+      run: bash .github/scripts/rocker_prep.sh ${{ steps.defs.outputs.rver }} ${{ steps.defs.outputs.biocver }} ${{ steps.defs.outputs.rockerintermediateprefix }} ${{ matrix.arch }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -100,7 +100,7 @@ jobs:
 
     - name: Set comma-separated list with all repository names
       id: images 
-      run: bash .github/scripts/rocker_prep.sh
+      run: bash .github/scripts/rocker_prep.sh ${{ steps.defs.outputs.rver }} ${{ steps.defs.outputs.biocver }} ${{ steps.defs.outputs.rockerintermediateprefix }} ${{ matrix.arch }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -153,7 +153,7 @@ jobs:
 
     - name: Set comma-separated list with all repository names
       id: images
-      run: bash .github/scripts/rocker_prep.sh
+      run: bash .github/scripts/rocker_prep.sh ${{ steps.defs.outputs.rver }} ${{ steps.defs.outputs.biocver }} ${{ steps.defs.outputs.rockerintermediateprefix }} ${{ matrix.arch }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
