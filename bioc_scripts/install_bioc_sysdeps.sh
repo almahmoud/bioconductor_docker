@@ -141,6 +141,11 @@ apt-get install -y --no-install-recommends \
 	libgdal-dev \
 	default-libmysqlclient-dev \
 	libmysqlclient-dev
+	
+# OpenBugs for BRugs CRAN package
+curl -o openbugs.tar.gz https://www.mrc-bsu.cam.ac.uk/wp-content/uploads/2018/04/OpenBUGS-3.2.3.tar.gz && \
+tar -zxvf openbugs.tar.gz && rm -rf openbugs.tar.gz && cd OpenBUGS-* && \
+./configure && make && sudo make install && cd ../ && rm -rf OpenBUGS-*
 
 Rscript -e 'install.packages("BiocManager", repos="https://cran.rstudio.com")'
 Rscript -e "BiocManager::install(version='$BIOC_VERSION', update=TRUE, ask=FALSE)"
