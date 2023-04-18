@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-BIOC_VERSION=${1:-"3.17"}
+BIOC_VERSION=${1:-"3.16"}
 
 # This is to avoid the error
 # 'debconf: unable to initialize frontend: Dialog'
@@ -143,6 +143,7 @@ apt-get install -y --no-install-recommends \
 	libmysqlclient-dev
 
 # OpenBugs for BRugs CRAN package
+apt-get install -y --no-install-recommends gcc-multilib
 curl -o openbugs.tar.gz https://www.mrc-bsu.cam.ac.uk/wp-content/uploads/2018/04/OpenBUGS-3.2.3.tar.gz && \
 tar -zxvf openbugs.tar.gz && rm -rf openbugs.tar.gz && cd OpenBUGS-* && \
 ./configure && make && sudo make install && cd ../ && rm -rf OpenBUGS-*
