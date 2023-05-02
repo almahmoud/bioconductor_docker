@@ -1,0 +1,104 @@
+name: Rocker builds from Tensorflow base
+
+on:
+  workflow_dispatch:
+    inputs:
+      rver:
+        default: "4.3.0"
+      biocver:
+        default: "3.17"
+  schedule:
+    - cron: '0 1 * * *'
+
+jobs:
+  mlbuild:
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Free root space
+      uses: almahmoud/free-root-space@main
+      with:
+        verbose: true
+
+    - name: Set defaults for schedule
+      id: defs
+      run: |
+        echo rver=$(echo ${{ github.event.inputs.rver || 'devel' }}) >> $GITHUB_OUTPUT
+        echo biocver=$(echo ${{ github.event.inputs.biocver || '3.17' }}) >> $GITHUB_OUTPUT
+        echo registryuser=$(echo ${{ github.repository_owner }} | awk '{print tolower($0)}') >> $GITHUB_OUTPUT
+        echo rockerintermediateprefix=$(echo "ghcr.io/${{ github.repository_owner }}/rocker" | awk '{print tolower($0)}') >> $GITHUB_OUTPUT
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+      with:
+        platforms: arm64
+      if: matrix.arch == 'arm64'
+
+    - name: Login to GHCR
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set comma-separated list with all repository names
+      id: images
+      run: |
+        ## git clone rocker
+        git clone --depth 1 https://github.com/rocker-org/rocker-versioned2
+        sed -i 's#rocker/cuda:${{ steps.defs.outputs.rver }}#${{ steps.defs.outputs.rockerintermediateprefix }}-cuda-tf:${{ steps.defs.outputs.rver }}-${{ matrix.arch }}#g' rocker-versioned2/dockerfiles/ml_${{ steps.defs.outputs.rver }}.Dockerfile
+        sed -i 's#rocker/ml:${{ steps.defs.outputs.rver }}#${{ steps.defs.outputs.rockerintermediateprefix }}-ml-tf:${{ steps.defs.outputs.rver }}-${{ matrix.arch }}#g' rocker-versioned2/dockerfiles/ml-verse_${{ steps.defs.outputs.rver }}.Dockerfile
+        
+        # Replace cuda base with TF base
+        sed -i "s#FROM #FROM gcr.io/deeplearning-platform-release/tf-gpu.2-10#g" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
+
+
+        BIOC_MINOR=$(echo "${{ steps.defs.outputs.biocver }}" | awk -F'.' '{print $NF}')
+        echo "Bioconductor Version: ${{ steps.defs.outputs.biocver }}"
+        if [ "${{ steps.defs.outputs.rver }}" = "devel" ];
+        then
+          if [ $((BIOC_MINOR%2)) -eq 0 ];
+          then
+              echo "Using latest release R since Bioc devel version is even";
+              sed -i 's#R_VERSION=${{ steps.defs.outputs.rver }}#R_VERSION=latest#g' rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
+          else
+              echo "Using latest pre-release R since Bioc devel version is even";
+              sed -i 's#R_VERSION=${{ steps.defs.outputs.rver }}#R_VERSION=patched#g' rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
+          fi
+        fi
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      with:
+        platforms: linux/${{ matrix.arch }}
+
+    - name: Build and load cuda
+      uses: docker/build-push-action@v3
+      with:
+        file: rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
+        context: rocker-versioned2
+        push: true
+        tags: ${{ steps.defs.outputs.rockerintermediateprefix }}-cuda-tf:${{ steps.defs.outputs.rver }}-${{ matrix.arch }}
+        platforms: linux/${{ matrix.arch }}
+
+    - name: Build and load ml
+      uses: docker/build-push-action@v3
+      with:
+        file: rocker-versioned2/dockerfiles/ml_${{ steps.defs.outputs.rver }}.Dockerfile
+        context: rocker-versioned2
+        push: true
+        tags: ${{ steps.defs.outputs.rockerintermediateprefix }}-ml-tf:${{ steps.defs.outputs.rver }}-${{ matrix.arch }}
+        platforms: linux/${{ matrix.arch }}
+
+    - name: Build and load ml-verse
+      uses: docker/build-push-action@v3
+      with:
+        file: rocker-versioned2/dockerfiles/ml-verse_${{ steps.defs.outputs.rver }}.Dockerfile
+        context: rocker-versioned2
+        push: true
+        tags: ${{ steps.defs.outputs.rockerintermediateprefix }}-ml-verse-tf:${{ steps.defs.outputs.rver }}-${{ matrix.arch }}
+        platforms: linux/${{ matrix.arch }}
