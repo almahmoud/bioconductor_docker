@@ -54,9 +54,8 @@ jobs:
         sed -i 's#rocker/ml:${{ steps.defs.outputs.rver }}#${{ steps.defs.outputs.rockerintermediateprefix }}-ml-tf:${{ steps.defs.outputs.rver }}-${{ matrix.arch }}#g' rocker-versioned2/dockerfiles/ml-verse_${{ steps.defs.outputs.rver }}.Dockerfile
         
         # Replace cuda base with TF base
-        sed -i "s#FROM .*#FROM gcr.io/deeplearning-platform-release/tf-gpu.2-10#g" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
+        sed -i "s#FROM .*#FROM tensorflow/tensorflow:latest-gpu#g" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
         sed -i "s#RUN /rocker_scripts/install_R_source.sh#RUN sudo locale-gen 'en_US.UTF-8'; export LANG=en_US.UTF-8; /rocker_scripts/install_R_source.sh#" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
-
 
         BIOC_MINOR=$(echo "${{ steps.defs.outputs.biocver }}" | awk -F'.' '{print $NF}')
         echo "Bioconductor Version: ${{ steps.defs.outputs.biocver }}"
