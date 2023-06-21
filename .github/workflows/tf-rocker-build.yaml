@@ -55,7 +55,8 @@ jobs:
         
         # Replace cuda base with TF base
         sed -i "s#FROM .*#FROM tensorflow/tensorflow:latest-gpu#g" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
-        sed -i "s#RUN /rocker_scripts/install_R_source.sh#RUN sudo locale-gen 'en_US.UTF-8'; export LANG=en_US.UTF-8; /rocker_scripts/install_R_source.sh#" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
+        sed -i "s#RUN #RUN bash #g" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
+        sed -i "s#RUN /rocker_scripts/install_R_source.sh#RUN sudo locale-gen 'en_US.UTF-8'; export LANG=en_US.UTF-8; bash /rocker_scripts/install_R_source.sh#" rocker-versioned2/dockerfiles/cuda_${{ steps.defs.outputs.rver }}.Dockerfile
 
         BIOC_MINOR=$(echo "${{ steps.defs.outputs.biocver }}" | awk -F'.' '{print $NF}')
         echo "Bioconductor Version: ${{ steps.defs.outputs.biocver }}"
