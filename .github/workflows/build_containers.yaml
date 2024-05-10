@@ -78,6 +78,7 @@ jobs:
             REPOLIST="$(echo $REPOLIST | sed 's/_docker//g'),$REPOLIST"
           fi
           echo list=$REPOLIST >> $GITHUB_OUTPUT
+          
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -110,3 +111,12 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
         if: matrix.base.armtag == 'N/A'
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ steps.meta.outputs.tags }}'
+          format: 'table'
+          exit-code: '0'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH,MEDIUM'
