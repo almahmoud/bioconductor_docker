@@ -35,13 +35,14 @@ jobs:
         echo "verdict=no" >> $GITHUB_OUTPUT
         RELEASE_R_VER=$(curl https://bioconductor.org/config.yaml | yq e '.r_ver_for_bioc_ver."${{steps.defs.outputs.releasebiocver}}"')
         while IFS= read -r CHECK_ROCKER_IMAGE; do
+            mkdir -p /tmp/$CHECK_ROCKER_IMAGE
             if ! grep -q "image:\s*'$CHECK_ROCKER_IMAGE'\s*,\s*amdtag" /tmp/buildcontainersfile; then
                 CHECK_ROCKER_IMAGE=$(echo $CHECK_ROCKER_IMAGE | sed 's#rocker/#ghcr.io/bioconductor/rocker-#g')
             fi
-            curl "https://hub.docker.com/v2/repositories/${CHECK_ROCKER_IMAGE}/tags" | jq '.results[].name' | tr -d '"' > /tmp/taglist-$CHECK_ROCKER_IMAGE
-            cat /tmp/buildcontainersfile | grep "$CHECK_ROCKER_IMAGE" | awk -F"'" '/amdtag:/ {print $4}' | uniq > /tmp/currtag-$CHECK_ROCKER_IMAGE
-            LATEST_TAG=$(cat /tmp/taglist-$CHECK_ROCKER_IMAGE | grep "$RELEASE_R_VER" | sort -n | tail -n 1)
-            CURR_TAG=$(cat /tmp/currtag-$CHECK_ROCKER_IMAGE | sort -n | tail -n 1)
+            curl "https://hub.docker.com/v2/repositories/${CHECK_ROCKER_IMAGE}/tags" | jq '.results[].name' | tr -d '"' > /tmp/${CHECK_ROCKER_IMAGE}/taglist
+            cat /tmp/buildcontainersfile | grep "$CHECK_ROCKER_IMAGE" | awk -F"'" '/amdtag:/ {print $4}' | uniq > /tmp/${CHECK_ROCKER_IMAGE}/currtag
+            LATEST_TAG=$(cat /tmp/${CHECK_ROCKER_IMAGE}/taglist | grep "$RELEASE_R_VER" | sort -n | tail -n 1)
+            CURR_TAG=$(cat /tmp/${CHECK_ROCKER_IMAGE}/currtag | sort -n | tail -n 1)
             echo "Image: ${CHECK_ROCKER_IMAGE}"
             echo "Latest tag: ${LATEST_TAG}"
             echo "Current tag: ${CURR_TAG}"
@@ -60,8 +61,8 @@ jobs:
                 echo "verdict=yes" >> $GITHUB_OUTPUT
             fi
 
-            curl "https://hub.docker.com/v2/repositories/rocker/rstudio/tags" | jq --arg ver "$LATEST_TAG" '.results[] | select(.name == $ver) | .images[].architecture' | tr -d '"' > /tmp/latestarchs-$CHECK_ROCKER_IMAGE
-            if grep -q 'arm64' /tmp/latestarchs-$CHECK_ROCKER_IMAGE; then
+            curl "https://hub.docker.com/v2/repositories/rocker/rstudio/tags" | jq --arg ver "$LATEST_TAG" '.results[] | select(.name == $ver) | .images[].architecture' | tr -d '"' > /tmp/${CHECK_ROCKER_IMAGE}/latestarchs
+            if grep -q 'arm64' /tmp/${CHECK_ROCKER_IMAGE}/latestarchs; then
                 sed -i "/${CHECK_ROCKER_IMAGE}/{s/armtag: '[^']*'/armtag: '${LATEST_TAG}'/}" .github/workflows/build_containers.yaml
             fi
             echo "---"
