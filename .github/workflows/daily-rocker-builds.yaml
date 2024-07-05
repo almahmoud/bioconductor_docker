@@ -7,8 +7,6 @@ on:
         default: "devel"
       biocver:
         default: "3.20"
-      check-rocker-image:
-        default: "rocker/rstudio"
   schedule:
     - cron: '0 18 * * *'
 
@@ -31,25 +29,43 @@ jobs:
     - name: Bump R version
       id: rbump
       run: |
-        curl https://hub.docker.com/v2/repositories/${{steps.defs.outputs.check-rocker-image}}/tags | jq '.results[].name' | tr -d '"' > /tmp/taglist
-        curl https://raw.githubusercontent.com/${{ github.repository }}/${{steps.defs.outputs.release-tag}}/.github/workflows/build_containers.yaml | grep 'amdtag' | awk -F"'" '/amdtag:/ {print $4}' | uniq > /tmp/currtag
+        curl -o /tmp/buildcontainersfile "https://raw.githubusercontent.com/${{ github.repository }}/${{steps.defs.outputs.release-tag}}/.github/workflows/build_containers.yaml"
+        cat /tmp/buildcontainersfile | grep ', \?amdtag:' | awk -F "'" '{print $2}' > /tmp/imagelist
+        sed -i 's#ghcr.io/bioconductor/rocker-#rocker/#g' /tmp/imagelist
+        echo "verdict=no" >> $GITHUB_OUTPUT
         RELEASE_R_VER=$(curl https://bioconductor.org/config.yaml | yq e '.r_ver_for_bioc_ver."${{steps.defs.outputs.releasebiocver}}"')
-        LATEST_TAG=$(cat /tmp/taglist | grep "$RELEASE_R_VER" | sort -n | tail -n 1)
-        CURR_TAG=$(cat /tmp/currtag | sort -n | tail -n 1)
-        echo latest-tag=$LATEST_TAG >> $GITHUB_OUTPUT
-        if [ "$LATEST_TAG" == "$CURR_TAG" ]; then
-          echo "Detected '$LATEST_TAG' == '$CURR_TAG' as latest available tag"
-          echo verdict="no"  >> $GITHUB_OUTPUT
-        else 
-          echo "Detected mismatching versions latest '$LATEST_TAG' != '$CURR_TAG' current tag"
-          mkdir -p ${{github.workspace}}/tmp/${{github.repository}}
-          git clone https://github.com/${{github.repository}} -b ${{steps.defs.outputs.release-tag}} ${{github.workspace}}/tmp/${{github.repository}}
-          cd ${{github.workspace}}/tmp/${{github.repository}}
-          AUTO_BRANCH="auto-bump-${{steps.defs.outputs.releasebiocver}}-for-${LATEST_TAG}"
-          sed -i "s/$CURR_TAG/$LATEST_TAG/g" .github/workflows/build_containers.yaml
-          sed -r -i 's/(^ARG BIOCONDUCTOR_PATCH=)([0-9]+)$/echo "\1$((\2+1))"/ge' Dockerfile
-          echo verdict="yes" >> $GITHUB_OUTPUT
-        fi
+        while IFS= read -r CHECK_ROCKER_IMAGE; do
+            if ! grep -q "image:\s*'$CHECK_ROCKER_IMAGE'\s*,\s*amdtag" /tmp/buildcontainersfile; then
+                CHECK_ROCKER_IMAGE=$(echo $CHECK_ROCKER_IMAGE | sed 's#rocker/#ghcr.io/bioconductor/rocker-#g')
+            fi
+            curl "https://hub.docker.com/v2/repositories/${CHECK_ROCKER_IMAGE}/tags" | jq '.results[].name' | tr -d '"' > /tmp/taglist-$CHECK_ROCKER_IMAGE
+            cat /tmp/buildcontainersfile | grep "$CHECK_ROCKER_IMAGE" | awk -F"'" '/amdtag:/ {print $4}' | uniq > /tmp/currtag-$CHECK_ROCKER_IMAGE
+            LATEST_TAG=$(cat /tmp/taglist-$CHECK_ROCKER_IMAGE | grep "$RELEASE_R_VER" | sort -n | tail -n 1)
+            CURR_TAG=$(cat /tmp/currtag-$CHECK_ROCKER_IMAGE | sort -n | tail -n 1)
+            echo "Image: ${CHECK_ROCKER_IMAGE}"
+            echo "Latest tag: ${LATEST_TAG}"
+            echo "Current tag: ${CURR_TAG}"
+            
+            if [ "$LATEST_TAG" == "$CURR_TAG" ]; then
+                echo "Detected '$LATEST_TAG' == '$CURR_TAG' as latest available tag"
+            else 
+                echo "Detected mismatching versions latest '$LATEST_TAG' != '$CURR_TAG' current tag"
+                if [ ! -d "${{github.workspace}}/tmp/${{github.repository}}" ]; then
+                    mkdir -p ${{github.workspace}}/tmp/${{github.repository}}
+                    git clone https://github.com/${{github.repository}} -b ${{steps.defs.outputs.release-tag}} ${{github.workspace}}/tmp/${{github.repository}}
+                fi
+                cd ${{github.workspace}}/tmp/${{github.repository}}
+                sed -i "/${CHECK_ROCKER_IMAGE}/{s/${CURR_TAG}/${LATEST_TAG}/}" .github/workflows/build_containers.yaml
+                sed -r -i 's/(^ARG BIOCONDUCTOR_PATCH=)([0-9]+)$/echo "\1$((\2+1))"/ge' Dockerfile
+                echo "verdict=yes" >> $GITHUB_OUTPUT
+            fi
+
+            curl "https://hub.docker.com/v2/repositories/rocker/rstudio/tags" | jq --arg ver "$LATEST_TAG" '.results[] | select(.name == $ver) | .images[].architecture' | tr -d '"' > /tmp/latestarchs-$CHECK_ROCKER_IMAGE
+            if grep -q 'arm64' /tmp/latestarchs-$CHECK_ROCKER_IMAGE; then
+                sed -i "/${CHECK_ROCKER_IMAGE}/{s/armtag: '[^']*'/armtag: '${LATEST_TAG}'/}" .github/workflows/build_containers.yaml
+            fi
+            echo "---"
+        done < /tmp/imagelist
 
     - name: Open pull request
       id: cpr
