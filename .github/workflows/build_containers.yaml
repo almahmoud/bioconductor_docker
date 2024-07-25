@@ -98,10 +98,10 @@ jobs:
 
       - name : Docker2Singularity
         run: |
-          mkdir -p /tmp/sing
-          imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
-          docker run -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/sing:/output --privileged -t --rm quay.io/singularity/docker2singularity $imagename
-          ls /tmp/sing
+            imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
+            docker pull $imagename
+            singularity build $(echo "$imagename" | sed 's#[\.:/]#_#g').sif docker://$imagename
+
       - name: Upload Release Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
