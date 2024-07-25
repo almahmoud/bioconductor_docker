@@ -101,6 +101,8 @@ jobs:
           prerelease: false
 
       - uses: eWaterCycle/setup-singularity@v7
+        with:
+          singularity-version: 3.8.2
       - name : Docker2Singularity
         run: |
           mkdir -p /tmp/sing
