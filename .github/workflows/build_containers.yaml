@@ -84,6 +84,9 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
 
+      - uses: eWaterCycle/setup-singularity@v7
+        with:
+          singularity-version: 3.8.2
       - name: Define Repository Name and Release Version
         run: |
             repo=$(echo "${GITHUB_REPOSITORY/\//-}")
@@ -100,9 +103,6 @@ jobs:
           draft: false
           prerelease: false
 
-      - uses: eWaterCycle/setup-singularity@v7
-        with:
-          singularity-version: 3.8.2
       - name : Docker2Singularity
         run: |
           mkdir -p /tmp/sing
