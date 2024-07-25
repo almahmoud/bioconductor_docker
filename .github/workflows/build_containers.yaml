@@ -100,7 +100,8 @@ jobs:
         run: |
             imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
             docker pull $imagename
-            singularity build $(echo "$imagename" | sed 's#[\.:/]#_#g').sif docker://$imagename
+            docker save $imagename image.tar
+            singularity build $(echo "$imagename" | sed 's#[\.:/]#_#g').sif docker-archive://image.tar
 
       - name: Upload Release Assets
         env:
