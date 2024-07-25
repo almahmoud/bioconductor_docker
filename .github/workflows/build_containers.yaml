@@ -88,7 +88,6 @@ jobs:
           sudo mkdir -p /var/cache/apt/archives/partial
           sudo apt-get update -yq
           sudo apt-get install -y linux-kernel-headers build-essential libseccomp-dev pkg-config squashfs-tools cryptsetup curl wget git
-          sudo rm -r /usr/local/go
           export VERSION=1.17.1 OS=linux ARCH=amd64  # change this as you need
 
           wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
