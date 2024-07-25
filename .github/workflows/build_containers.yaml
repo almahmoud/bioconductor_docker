@@ -84,6 +84,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
 
+      - uses: actions/setup-go@v5
       - uses: eWaterCycle/setup-singularity@v7
         with:
           singularity-version: 3.8.2
