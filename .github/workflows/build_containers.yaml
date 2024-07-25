@@ -84,7 +84,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
 
-      - run: "sudo mkdir -p /var/cache/apt/archives/partial && sudo apt-get update -yq && sudo apt-get install -y linux-kernel-headers build-essential"
+      - run: "sudo mkdir -p /var/cache/apt/archives/partial && sudo apt-get update -yq && sudo apt-get install -y linux-kernel-headers build-essential libseccomp-dev pkg-config squashfs-tools cryptsetup curl wget git"
       - uses: singularityhub/install-singularity@main
 
       - name: Define Repository Name and Release Version
