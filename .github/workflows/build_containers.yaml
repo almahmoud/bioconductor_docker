@@ -84,7 +84,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
 
-      - run: "sudo mkdir -p /var/cache/apt/archives/partial && sudo apt-get update -yq"
+      - run: "sudo mkdir -p /var/cache/apt/archives/partial && sudo apt-get update -yq && sudo apt-get install -y build-essential"
       - uses: singularityhub/install-singularity@main
 
       - name: Define Repository Name and Release Version
