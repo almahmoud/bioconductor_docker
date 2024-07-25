@@ -88,7 +88,7 @@ jobs:
         run: |
             repo=$(echo "${GITHUB_REPOSITORY/\//-}")
             echo "reponame=$repo" >> $GITHUB_ENV
-            echo "release_tag=$(echo '${{ steps.images.outputs.list }}' | awk -F',' '{print $1}' | awk -F':' '{print $2}')" >> $GITHUB_ENV
+            echo "release_tag=$(echo '${{ steps.images.outputs.list }}' | awk -F',' '{print $1}')" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
