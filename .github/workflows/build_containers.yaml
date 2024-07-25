@@ -127,6 +127,9 @@ jobs:
           draft: false
           prerelease: false
 
+      - uses: eWaterCycle/setup-singularity@v6
+        with:
+          singularity-version: 3.7.1
       - name : Docker2Singularity
         run: |
           mkdir -p /tmp/sing
@@ -141,9 +144,6 @@ jobs:
         run: |
           hub release edit $(find /tmp/sing -type f -name "*.sif" -printf "-a %p ") -m "" "$tag_name" 
 
-      - uses: eWaterCycle/setup-singularity@v6
-        with:
-          singularity-version: 3.7.1
       - name: Build the singularity container
         if: ${{ env.release_tag != env.latest_tag }}
         run: |
