@@ -110,3 +110,45 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
         if: matrix.base.armtag == 'N/A'
+
+      - name: Define Repository Name and Release Version
+        run: |
+            repo=$(echo "${GITHUB_REPOSITORY/\//-}")
+            echo "reponame=$repo" >> $GITHUB_ENV
+            echo "release_tag=$(echo '${{ steps.images.outputs.list }}' | awk -F',' '{print $1}' | awk -F':' '{print $2}')" >> $GITHUB_ENV
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.release_tag }}
+          release_name: Release ${{ env.release_tag }}
+          draft: false
+          prerelease: false
+
+      - name : Docker2Singularity
+        run: |
+          mkdir -p /tmp/sing
+          imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
+          docker run -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/sing:/output --privileged -t --rm quay.io/singularity/docker2singularity $imagename
+          ls /tmp/sing
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          tag_name: ${{ env.release_tag }}
+        run: |
+          hub release edit $(find /tmp/sing -type f -name "*.sif" -printf "-a %p ") -m "" "$tag_name" 
+
+      - uses: eWaterCycle/setup-singularity@v6
+        with:
+          singularity-version: 3.7.1
+      - name: Build the singularity container
+        if: ${{ env.release_tag != env.latest_tag }}
+        run: |
+            repo=$(echo "${GITHUB_REPOSITORY/\//-}")
+            imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
+            docker pull imagename
+            singularity build $(echo "${imagename}" | sed 's#[\.:/]#_#g').sif docker://$imagename
+
