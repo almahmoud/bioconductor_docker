@@ -8,7 +8,6 @@ on:
   schedule:
     - cron: '0 18 * * 5'
 
-
 jobs:
   make-matrix:
     runs-on: ubuntu-latest
@@ -18,11 +17,11 @@ jobs:
       - id: matrix
         run: |
           echo 'base<<EOF' >> $GITHUB_OUTPUT
-          echo "{image: 'rocker/r-ver', amdtag: '4.4.1', armtag: '4.4.1', outname: 'r-ver'}" >> $GITHUB_OUTPUT
-          echo "{image: 'rocker/rstudio', amdtag: '4.4.1', armtag: '4.4.1', outname: 'bioconductor_docker'}" >> $GITHUB_OUTPUT
-          echo "{image: 'rocker/tidyverse', amdtag: '4.4.1', armtag: 'N/A', outname: 'tidyverse'}" >> $GITHUB_OUTPUT
-          echo "{image: 'rocker/ml-verse', amdtag: '4.4.1', armtag: 'N/A', outname: 'ml-verse'}" >> $GITHUB_OUTPUT
-          echo "{image: 'rocker/shiny', amdtag: '4.4.1', armtag: 'N/A', outname: 'shiny'}" >> $GITHUB_OUTPUT
+          echo "[{image: 'rocker/r-ver', amdtag: '4.4.1', armtag: '4.4.1', outname: 'r-ver'}," >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/rstudio', amdtag: '4.4.1', armtag: '4.4.1', outname: 'bioconductor_docker'}," >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/tidyverse', amdtag: '4.4.1', armtag: 'N/A', outname: 'tidyverse'}," >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/ml-verse', amdtag: '4.4.1', armtag: 'N/A', outname: 'ml-verse'}," >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/shiny', amdtag: '4.4.1', armtag: 'N/A', outname: 'shiny'}]" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
   docker:
     runs-on: ubuntu-latest
