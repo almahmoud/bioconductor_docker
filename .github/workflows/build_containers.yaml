@@ -8,17 +8,31 @@ on:
   schedule:
     - cron: '0 18 * * 5'
 
+
 jobs:
-  build:
+  make-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.matrix.outputs.base }}
+    steps:
+      - id: matrix
+        run: |
+          echo 'base<<EOF' >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/r-ver', amdtag: '4.4.1', armtag: '4.4.1', outname: 'r-ver'}" >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/rstudio', amdtag: '4.4.1', armtag: '4.4.1', outname: 'bioconductor_docker'}" >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/tidyverse', amdtag: '4.4.1', armtag: 'N/A', outname: 'tidyverse'}" >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/ml-verse', amdtag: '4.4.1', armtag: 'N/A', outname: 'ml-verse'}" >> $GITHUB_OUTPUT
+          echo "{image: 'rocker/shiny', amdtag: '4.4.1', armtag: 'N/A', outname: 'shiny'}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+  docker:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.images.outputs.list }}
+    needs:
+    - make-matrix
     strategy:
-      fail-fast: false
       matrix:
-        base:
-          - {image: 'rocker/r-ver', amdtag: '4.4.1', armtag: '4.4.1', outname: 'r-ver'}
-          - {image: 'rocker/rstudio', amdtag: '4.4.1', armtag: '4.4.1', outname: 'bioconductor_docker'}
-          - {image: 'rocker/tidyverse', amdtag: '4.4.1', armtag: 'N/A', outname: 'tidyverse'}
-          - {image: 'rocker/ml-verse', amdtag: '4.4.1', armtag: 'N/A', outname: 'ml-verse'}
-          - {image: 'rocker/shiny', amdtag: '4.4.1', armtag: 'N/A', outname: 'shiny'}
+        base: ${{ fromJSON(needs.make-matrix.outputs.base) }}
 
     name: Build branch images
     runs-on: ubuntu-latest
@@ -110,3 +124,49 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
         if: matrix.base.armtag == 'N/A'
+
+  singularity:
+    runs-on: ubuntu-latest
+    needs:
+    - make-matrix
+    - docker
+    strategy:
+      matrix:
+        base: ${{ fromJSON(needs.make-matrix.outputs.base) }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: singularityhub/install-singularity@main
+
+      - name: Define Repository Name and Release Version
+        run: |
+            repo=$(echo "${GITHUB_REPOSITORY/\//-}")
+            echo "reponame=$repo" >> $GITHUB_ENV
+            echo "release_tag=$(echo '${{ needs.docker.outputs.list }}' | awk -F',' '{print $1}' | sed 's#[\.:/]#_#g')" >> $GITHUB_ENV
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.release_tag }}
+          release_name: Release ${{ env.release_tag }}
+          draft: false
+          prerelease: false
+
+      - name : Docker2Singularity
+        run: |
+          mkdir -p /tmp/sing
+          imagename=$(echo "${{ needs.docker.outputs.list }}" | awk -F',' '{print $1}')
+          docker run -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/sing:/output --privileged -t --rm quay.io/singularity/docker2singularity $imagename
+          ls /tmp/sing
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          tag_name: ${{ env.release_tag }}
+        run: |
+          hub release edit $(find /tmp/sing -type f -name "*.sif" -printf "-a %p ") -m "" "$tag_name" 
+
+
+
