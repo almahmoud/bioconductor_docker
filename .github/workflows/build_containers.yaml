@@ -68,7 +68,7 @@ jobs:
           imagename="$(echo "$REPOLIST" | awk -F',' '{print $1}')"
           echo $imagename
           docker pull "$imagename"
-          (cd /tmp && docker save -o image.tar $imagename)
+          (mkdir -p /tmp/sing && cd /tmp/sing && docker save -o image.tar $imagename)
           
       - uses: singularityhub/install-singularity@main
 
@@ -77,29 +77,17 @@ jobs:
           repo=$(echo "${GITHUB_REPOSITORY/\//-}")
           echo "reponame=$repo" >> $GITHUB_ENV
           echo "release_tag=$(echo '${{ steps.images.outputs.list }}' | awk -F',' '{print $1}' | sed 's#[\.:/]#_#g')" >> $GITHUB_ENV
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.release_tag }}
-          release_name: Release ${{ env.release_tag }}
-          draft: false
-          prerelease: false
 
       - name: Docker2Singularity
+        id: sing
         run: |
-            cd /tmp
-            singularity build $(echo "$imagename" | sed 's#[\.:/]#_#g').sif docker-archive://image.tar
-
-      - name: Upload Release Assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          tag_name: ${{ env.release_tag }}
-        run: |
-          hub release edit $(find /tmp/ -type f -name "*.sif" -printf "-a %p ") -m "" "$tag_name" 
-
-
+            cd /tmp/sing
+            sifname="$(echo "$imagename" | sed 's#[\.:/]#_#g').sif"
+            singularity build $sifname docker-archive://image.tar
+            echo sifname=$sifname >> $GITHUB_OUTPUT
+            
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.sing.outputs.sifname }}
 
