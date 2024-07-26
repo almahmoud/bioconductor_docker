@@ -65,7 +65,7 @@ jobs:
             REPOLIST="$(echo $REPOLIST | sed 's/_docker//g'),$REPOLIST"
           fi
           echo list=$REPOLIST >> $GITHUB_OUTPUT
-          imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
+          imagename=$(echo "$REPOLIST" | awk -F',' '{print $1}')
           docker pull $imagename
           docker save $imagename /tmp/image.tar
           
