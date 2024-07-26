@@ -83,12 +83,34 @@ jobs:
         run: |
             cd /tmp/sing
             imagename="$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')"
-            sifname="$(echo "$imagename" | sed 's#[\.:/]#_#g').sif"
+            sifname="$(echo "$imagename" | sed 's#ghcr.io/##g' | sed 's#[\.:/]#_#g').sif"
             singularity build $sifname docker-archive://image.tar
             echo sifname=$sifname >> $GITHUB_OUTPUT
             
-      - name: Login and Deploy Container
-        run: |         
-          echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${{ github.actor }} --password-stdin oras://ghcr.io
-          singularity push /tmp/sing/${{ steps.sing.outputs.sifname }} oras://ghcr.io/sing-$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
+      - name: Install rclone & add rclone conf file
+        uses: nick-fields/retry@v3
+        env:
+            RCLONE_CONF: ${{secrets.RCLONE_CONF}}
+        with:
+          timeout_minutes: 20
+          max_attempts: 10
+          shell: bash
+          command: |
+            set -xe
+            curl https://rclone.org/install.sh | sudo bash || true
+            echo "$RCLONE_CONF" > ~/.rclone.conf
+            if ! command -v rclone &> /dev/null
+            then
+                echo "rclone could not be found"
+                exit 1;
+            fi
 
+      - name: Rclone push package
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          shell: bash
+          command: |
+            set -x
+            rclone copy /tmp/sing/${{ steps.sing.outputs.sifname }} osn:/bir190004-bucket01/singularity/
