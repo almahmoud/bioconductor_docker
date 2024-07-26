@@ -86,8 +86,8 @@ jobs:
             singularity build $sifname docker-archive://image.tar
             echo sifname=$sifname >> $GITHUB_OUTPUT
             
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ steps.sing.outputs.sifname }}
+      - name: Login and Deploy Container
+        run: |         
+          echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${{ secrets.GHCR_USERNAME }} --password-stdin oras://ghcr.io
+          singularity push /tmp/sing/${{ steps.sing.outputs.sifname }} oras://ghcr.io/${GITHUB_REPOSITORY}:${tag}
 
