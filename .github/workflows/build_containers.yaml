@@ -82,6 +82,7 @@ jobs:
         id: sing
         run: |
             cd /tmp/sing
+            imagename="$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')"
             sifname="$(echo "$imagename" | sed 's#[\.:/]#_#g').sif"
             singularity build $sifname docker-archive://image.tar
             echo sifname=$sifname >> $GITHUB_OUTPUT
@@ -89,5 +90,5 @@ jobs:
       - name: Login and Deploy Container
         run: |         
           echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${{ github.actor }} --password-stdin oras://ghcr.io
-          singularity push /tmp/sing/${{ steps.sing.outputs.sifname }} oras://ghcr.io/${GITHUB_REPOSITORY}:${tag}
+          singularity push /tmp/sing/${{ steps.sing.outputs.sifname }} oras://ghcr.io/sing-$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
 
