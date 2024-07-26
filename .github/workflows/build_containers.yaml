@@ -65,12 +65,11 @@ jobs:
             REPOLIST="$(echo $REPOLIST | sed 's/_docker//g'),$REPOLIST"
           fi
           echo list=$REPOLIST >> $GITHUB_OUTPUT
-          imagename=$(echo "$REPOLIST" | awk -F',' '{print $1}')
+          imagename="$(echo "$REPOLIST" | awk -F',' '{print $1}')"
           echo $imagename
-          docker pull $imagename
-          docker save $imagename /tmp/image.tar
+          docker pull "$imagename"
+          docker save "$imagename" /tmp/image.tar
           
-
       - uses: singularityhub/install-singularity@main
 
       - name: Define Repository Name and Release Version
