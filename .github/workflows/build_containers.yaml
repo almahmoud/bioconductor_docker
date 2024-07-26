@@ -65,14 +65,18 @@ jobs:
             REPOLIST="$(echo $REPOLIST | sed 's/_docker//g'),$REPOLIST"
           fi
           echo list=$REPOLIST >> $GITHUB_OUTPUT
+          imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
+          docker pull $imagename
+          docker save $imagename /tmp/image.tar
+          
 
       - uses: singularityhub/install-singularity@main
 
       - name: Define Repository Name and Release Version
         run: |
-            repo=$(echo "${GITHUB_REPOSITORY/\//-}")
-            echo "reponame=$repo" >> $GITHUB_ENV
-            echo "release_tag=$(echo '${{ steps.images.outputs.list }}' | awk -F',' '{print $1}' | sed 's#[\.:/]#_#g')" >> $GITHUB_ENV
+          repo=$(echo "${GITHUB_REPOSITORY/\//-}")
+          echo "reponame=$repo" >> $GITHUB_ENV
+          echo "release_tag=$(echo '${{ steps.images.outputs.list }}' | awk -F',' '{print $1}' | sed 's#[\.:/]#_#g')" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -86,10 +90,7 @@ jobs:
 
       - name: Docker2Singularity
         run: |
-            imagename=$(echo "${{ steps.images.outputs.list }}" | awk -F',' '{print $1}')
-            docker pull $imagename
-            docker save $imagename image.tar
-            ls
+            cd /tmp
             singularity build $(echo "$imagename" | sed 's#[\.:/]#_#g').sif docker-archive://image.tar
 
       - name: Upload Release Assets
