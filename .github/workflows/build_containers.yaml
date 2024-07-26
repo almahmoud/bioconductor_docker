@@ -68,7 +68,7 @@ jobs:
           imagename="$(echo "$REPOLIST" | awk -F',' '{print $1}')"
           echo $imagename
           docker pull "$imagename"
-          docker save "$imagename" /tmp/image.tar
+          (cd /tmp && docker save "$imagename" image.tar)
           
       - uses: singularityhub/install-singularity@main
 
